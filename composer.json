@@ -1,0 +1,53 @@
+{
+    "name": "omnidns/cloudflare",
+    "type": "library",
+    "description": "Omnidns's Cloudflare, under any PHP host: the records of a zone (over cloudflare/sdk, proxying kept), and the domains Cloudflare Registrar holds for an account with their terms - an API token.",
+    "keywords": [
+        "dns",
+        "domain",
+        "cloudflare",
+        "dns-records",
+        "registrar",
+        "framework-agnostic",
+        "omnidns"
+    ],
+    "homepage": "https://github.com/glitchr-studio/omnidns-cloudflare",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Marco Meyer",
+            "email": "marco.meyer@glitchr.io"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "cloudflare/sdk": "^1.4|^2.0",
+        "omniscient/omnidns": "^1.0@dev",
+        "psr/http-message": "^1.0|^2.0"
+    },
+    "require-dev": {
+        "guzzlehttp/psr7": "^2.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Omnidns\\Cloudflare\\": ""
+        },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Omnidns\\Cloudflare\\Tests\\": "Tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-1.x": "1.x-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
