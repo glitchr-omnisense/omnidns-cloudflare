@@ -1,6 +1,6 @@
 # omnidns/cloudflare
 
-Cloudflare for [omniscient/omnidns](https://github.com/glitchr-studio/omnidns), under any PHP
+Cloudflare for [omnisense/omnidns](https://github.com/glitchr-omnisense/omnidns), under any PHP
 host: the records of a zone Cloudflare serves, and the domains Cloudflare Registrar holds for an
 account with their terms.
 

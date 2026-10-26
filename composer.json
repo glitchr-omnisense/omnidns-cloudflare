@@ -11,7 +11,7 @@
         "framework-agnostic",
         "omnidns"
     ],
-    "homepage": "https://github.com/glitchr-studio/omnidns-cloudflare",
+    "homepage": "https://github.com/glitchr-omnisense/omnidns-cloudflare",
     "license": "MIT",
     "authors": [
         {
@@ -22,7 +22,7 @@
     "require": {
         "php": ">=8.2",
         "cloudflare/sdk": "^1.4|^2.0",
-        "omniscient/omnidns": "^1.0@dev",
+        "omnisense/omnidns": "^1.0@dev",
         "psr/http-message": "^1.0|^2.0"
     },
     "require-dev": {
