@@ -187,6 +187,25 @@ final class CloudflareProviderTest extends TestCase
         }
     }
 
+    /**
+     * Cloudflare refusing the token: the ProviderException keeps no argument in its trace (the
+     * closure there held the provider and its adapter, the token in it), so a log of it
+     * (zend.exception_ignore_args off) holds no token.
+     */
+    public function testARefusalKeepsNoTokenInItsTrace(): void
+    {
+        $ignoreArgs = ini_set('zend.exception_ignore_args', '0');
+        try {
+            (new CloudflareProvider(new FailingAdapter(new None(), '', 'cloudflare-token-123', false, true)))->records('example.org');
+            self::fail('no exception');
+        } catch (ProviderException $e) {
+            self::assertStringContainsString('403', $e->getMessage());
+            self::assertFalse(str_contains(print_r($e->getTrace(), true), 'cloudflare-token-123'), 'the trace holds the token');
+        } finally {
+            ini_set('zend.exception_ignore_args', false !== $ignoreArgs ? $ignoreArgs : '1');
+        }
+    }
+
     /** @param array<string, mixed> $routes */
     private function provider(array $routes, ?string $accountId = null): CloudflareProvider
     {

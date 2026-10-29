@@ -14,11 +14,11 @@ use Psr\Http\Message\ResponseInterface;
  * cloudflare/sdk's Guzzle adapter when Cloudflare is not reached: the token in the request's
  * headers, as the adapter sends it. Guzzle's ConnectException escapes the adapter as it is (it is
  * not a RequestException); with $wrapped, a RequestException without a response, wrapped by the
- * adapter in its ResponseException.
+ * adapter in its ResponseException; with $refused, Cloudflare's 403 as the adapter wraps it.
  */
 final class FailingAdapter implements Adapter
 {
-    public function __construct(Auth $auth, string $baseURI, private readonly string $token = '', private readonly bool $wrapped = false)
+    public function __construct(Auth $auth, string $baseURI, private readonly string $token = '', private readonly bool $wrapped = false, private readonly bool $refused = false)
     {
     }
 
@@ -70,6 +70,9 @@ final class FailingAdapter implements Adapter
     private function send(string $method, string $uri): never
     {
         $request = new Request($method, 'https://api.cloudflare.com/client/v4/'.$uri, ['Authorization' => 'Bearer '.$this->token]);
+        if ($this->refused) {
+            throw ResponseException::fromRequestException(new RequestException('Client error: 403 Forbidden', $request, new \GuzzleHttp\Psr7\Response(403, ['Content-Type' => 'application/json'], '{"success": false, "errors": [{"code": 10000, "message": "Authentication error"}]}')));
+        }
         if ($this->wrapped) {
             throw ResponseException::fromRequestException(new RequestException('cURL error 28: Operation timed out for https://api.cloudflare.com/client/v4/'.$uri, $request));
         }

@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- A refusal or an error Cloudflare answers (`ProviderException`) keeps no argument in its trace: the
+  closure there held the provider and its adapter, the token in it.
 - Guzzle's `ConnectException` (no connection: a host not resolved, refused), which cloudflare/sdk's
   adapter lets through, is an `UnreachableException`: it escaped the provider as it was.
 - An `UnreachableException` no longer carries the token: its previous carried the request whose

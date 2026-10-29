@@ -218,9 +218,10 @@ final class CloudflareProvider implements DnsInterface, DomainsInterface
                 throw self::unreachable($e, $previous, $what);
             }
 
-            throw ProviderException::answered('Cloudflare', $what, null === $status ? $e->getMessage() : "$status ({$e->getMessage()})", $status ?? 0);
+            // No trace argument: the closure there holds this provider and its adapter, the token in it.
+            throw Redaction::withoutArguments(ProviderException::answered('Cloudflare', $what, null === $status ? $e->getMessage() : "$status ({$e->getMessage()})", $status ?? 0));
         } catch (EndpointException $e) {
-            throw ProviderException::answered('Cloudflare', $what, $e->getMessage());
+            throw Redaction::withoutArguments(ProviderException::answered('Cloudflare', $what, $e->getMessage()));
         } catch (\GuzzleHttp\Exception\GuzzleException $e) {
             // Guzzle's ConnectException, which the SDK's adapter lets through (it is not a RequestException).
             throw self::unreachable($e, $e, $what);
