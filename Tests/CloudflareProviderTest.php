@@ -159,6 +159,34 @@ final class CloudflareProviderTest extends TestCase
         $registry->domains('cf');
     }
 
+    /**
+     * Cloudflare not reached: an UnreachableException - Guzzle's ConnectException, which the
+     * SDK's adapter lets through, as well as a RequestException without a response, which it
+     * wraps - and nothing of the token anywhere in what a log of the whole chain writes: the
+     * messages, the previous exceptions (copies, their class kept, without the request whose
+     * headers held the token), the traces' arguments when zend.exception_ignore_args is off.
+     */
+    public function testNoPartOfAnUnreachableChainHoldsTheToken(): void
+    {
+        $ignoreArgs = ini_set('zend.exception_ignore_args', '0');
+        try {
+            foreach ([false, true] as $wrapped) {
+                try {
+                    (new CloudflareProvider(new FailingAdapter(new None(), '', 'cloudflare-token-123', $wrapped)))->records('example.org');
+                    self::fail('no exception');
+                } catch (\Omnidns\Exception\UnreachableException $e) {
+                    self::assertInstanceOf($wrapped ? \Cloudflare\API\Adapter\ResponseException::class : \GuzzleHttp\Exception\ConnectException::class, $e->getPrevious());
+                    for ($one = $e; null !== $one; $one = $one->getPrevious()) {
+                        self::assertStringNotContainsString('cloudflare-token-123', $one->getMessage());
+                        self::assertStringNotContainsString('cloudflare-token-123', print_r($one->getTrace(), true));
+                    }
+                }
+            }
+        } finally {
+            ini_set('zend.exception_ignore_args', false !== $ignoreArgs ? $ignoreArgs : '1');
+        }
+    }
+
     /** @param array<string, mixed> $routes */
     private function provider(array $routes, ?string $accountId = null): CloudflareProvider
     {

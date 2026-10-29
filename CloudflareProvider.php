@@ -14,6 +14,7 @@ use Omnidns\Exception\InvalidConfigException;
 use Omnidns\Exception\ProviderException;
 use Omnidns\Exception\UnreachableException;
 use Omnidns\Http\Json;
+use Omnidns\Http\Redaction;
 use Omnidns\Model\DomainInfo;
 use Omnidns\Model\DomainName;
 use Omnidns\Model\Record;
@@ -214,12 +215,27 @@ final class CloudflareProvider implements DnsInterface, DomainsInterface
             $previous = $e->getPrevious();
             $status = $previous instanceof \GuzzleHttp\Exception\RequestException ? $previous->getResponse()?->getStatusCode() : null;
             if (null === $status && $previous instanceof \GuzzleHttp\Exception\GuzzleException) {
-                throw new UnreachableException(\sprintf('Cloudflare could not be reached for %s: %s', $what, $e->getMessage()), 0, $e);
+                throw self::unreachable($e, $previous, $what);
             }
 
             throw ProviderException::answered('Cloudflare', $what, null === $status ? $e->getMessage() : "$status ({$e->getMessage()})", $status ?? 0);
         } catch (EndpointException $e) {
             throw ProviderException::answered('Cloudflare', $what, $e->getMessage());
+        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+            // Guzzle's ConnectException, which the SDK's adapter lets through (it is not a RequestException).
+            throw self::unreachable($e, $e, $what);
         }
+    }
+
+    /**
+     * Not reached: the message and the exception with the request's token masked, the previous a
+     * copy without the request it carried, no trace keeping arguments.
+     */
+    private static function unreachable(\Throwable $e, \Throwable $guzzle, string $what): UnreachableException
+    {
+        $request = $guzzle instanceof \GuzzleHttp\Exception\RequestException || $guzzle instanceof \GuzzleHttp\Exception\ConnectException ? $guzzle->getRequest() : null;
+        $secrets = null === $request ? [] : Redaction::secrets((string) $request->getUri(), ['headers' => $request->getHeaders()]);
+
+        return Redaction::withoutArguments(new UnreachableException(\sprintf('Cloudflare could not be reached for %s: %s', $what, Redaction::text($e->getMessage(), $secrets)), 0, Redaction::copy($e, $secrets)));
     }
 }

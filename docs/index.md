@@ -108,7 +108,8 @@ Not run live (no token).
 
 - An answer with an error status (the SDK's `ResponseException` over Guzzle's): `ProviderException`
   `Cloudflare answered <status> (<message>) for <what>.`, the status as its code.
-- No response (Guzzle could not connect): `UnreachableException`.
+- No response (Guzzle could not connect, its `ConnectException` included): `UnreachableException`, the
+  token masked in its message and its previous, no trace keeping arguments.
 - The SDK's `EndpointException` (a zone not found by name...): `ProviderException` with its
   message.
 - A record not found by content: `ProviderException` `no such record`.
