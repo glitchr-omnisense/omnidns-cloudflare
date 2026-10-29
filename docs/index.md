@@ -50,17 +50,10 @@ business.
 | Contract | Supported |
 |---|---|
 | `DnsInterface` | yes; HTTPS, SVCB and the other types outside omnidns's left out |
-| `DomainsInterface` | with `account_id` (read only) |
+| `DomainsInterface` | with `account_id` (read only); without, `$registry->domains()` refuses it (`NotSupportedException`) |
 | Availability, registrar, name servers | no: the registry refuses them (`NotSupportedException`) |
 
 Terms: Cloudflare's terms, the API's limits (1,200 calls per five minutes per user).
-
-> [!WARNING]
-> Known defect: the class implements `DomainsInterface` whatever its options. Without
-> `account_id`, `$registry->domains('cloudflare')` returns it and `domains()` throws
-> `InvalidConfigException` (`The "cloudflare" provider needs an account_id to read the Registrar's
-> domains.`, checked 2026-10-26), where the README says there is then no `DomainsInterface` (the
-> registry's `NotSupportedException`). Check `capabilities()->domains` first.
 
 ## Behaviour
 

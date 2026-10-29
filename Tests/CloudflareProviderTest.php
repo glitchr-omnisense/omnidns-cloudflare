@@ -149,6 +149,16 @@ final class CloudflareProviderTest extends TestCase
         $registry->availability('cf');
     }
 
+    /** Without account_id the class still implements DomainsInterface: the registry asks its capabilities. */
+    public function testWithoutAnAccountTheRegistryGivesNoDomains(): void
+    {
+        $registry = new Registry([new CloudflareFactory(new RecordingAdapter(new None(), ''))], ['cf' => ['factory' => 'cloudflare', 'options' => ['token' => 't']]]);
+
+        $this->expectException(NotSupportedException::class);
+        $this->expectExceptionMessage('does not list domains.');
+        $registry->domains('cf');
+    }
+
     /** @param array<string, mixed> $routes */
     private function provider(array $routes, ?string $accountId = null): CloudflareProvider
     {
