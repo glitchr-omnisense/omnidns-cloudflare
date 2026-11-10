@@ -1,0 +1,53 @@
+{
+    "$schema": "https://github.com/glitchr-omnisense/contracts/blob/1.x/resources/usage-policy.schema.json",
+    "provider": "cloudflare",
+    "rateLimits": [
+        {
+            "max": 1200,
+            "window": "minute",
+            "every": 5,
+            "scope": "application",
+            "operations": [],
+            "note": "\"The global rate limit for the Cloudflare API is 1,200 requests per five minute period per user\", shared by the dashboard, API keys and API tokens: counted here for the whole application, the stricter form (several tokens of one user share it). Past it, every call is refused with a 429 for the next five minutes."
+        },
+        {
+            "max": 200,
+            "window": "second",
+            "scope": "application",
+            "operations": [],
+            "note": "Client API per IP: 200 a second (counted for the whole application, the stricter form)."
+        }
+    ],
+    "rights": {
+        "commercial": "unknown",
+        "openSourceRequired": null,
+        "caching": {
+            "permission": "unknown",
+            "maxTtl": null
+        },
+        "storage": "unknown",
+        "redistribution": "unknown",
+        "attribution": {
+            "required": false,
+            "text": null,
+            "url": null,
+            "where": []
+        },
+        "licence": null
+    },
+    "requirements": {
+        "key": true,
+        "userAgent": {
+            "required": false,
+            "pattern": null
+        }
+    },
+    "provenance": {
+        "terms": "https://www.cloudflare.com/terms/",
+        "policy": "https://developers.cloudflare.com/fundamentals/api/reference/limits/",
+        "verifiedAt": "2026-11-10",
+        "declaredBy": "maintainer",
+        "contact": null,
+        "notes": "The limits page (read 2026-11-10) gives 1,200 requests per 5 minutes per user and 200 a second per IP; Enterprise customers may ask Support for more. Cloudflare answers Ratelimit and Ratelimit-Policy fields and a Retry-After on a 429; this provider goes through cloudflare/sdk's Guzzle adapter, so only a 429's fields are read (successful answers' headers are not exposed by the SDK). A call is one operation: records() follows the pages (100 records each) inside one operation, so a large zone spends more requests than the guard counts. The Self-Serve Subscription Agreement (last updated 2025-09-12) does not address commercial use, caching or storage of what the API answers; it forbids circumventing Service-specific usage limits (2.2.1(c)) and selling access to the Services to a third party (2.2.1(a)). Not a data source: rights unknown rather than guessed."
+    }
+}

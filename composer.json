@@ -22,6 +22,7 @@
     "require": {
         "php": ">=8.2",
         "cloudflare/sdk": "^1.4|^2.0",
+        "omnisense/contracts": "^1.0@dev",
         "omnisense/omnidns": "^1.0@dev",
         "psr/http-message": "^1.0|^2.0"
     },
@@ -43,6 +44,9 @@
         }
     },
     "extra": {
+        "omnisense": {
+            "policy": "policy.json"
+        },
         "branch-alias": {
             "dev-1.x": "1.x-dev"
         }

@@ -18,6 +18,11 @@ use Omnidns\Http\Redaction;
 use Omnidns\Model\DomainInfo;
 use Omnidns\Model\DomainName;
 use Omnidns\Model\Record;
+use Omnisense\Contracts\Policy\Backoff;
+use Omnisense\Contracts\Policy\DeclaresUsagePolicyInterface;
+use Omnisense\Contracts\Policy\UsageLimitReached;
+use Omnisense\Contracts\Policy\UsagePolicy;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Cloudflare's API v4: a zone's records through cloudflare/sdk (its DNS and
@@ -27,14 +32,19 @@ use Omnidns\Model\Record;
  * registers a domain, and a zone's name servers are Cloudflare's own: no
  * AvailabilityInterface, RegistrarInterface, NameserversInterface here.
  */
-final class CloudflareProvider implements DnsInterface, DomainsInterface
+final class CloudflareProvider implements DnsInterface, DomainsInterface, DeclaresUsagePolicyInterface
 {
+    /** Cloudflare's usage policy, as its terms read on the day it says (provenance.verifiedAt). */
+    public const POLICY = __DIR__.'/policy.json';
+
+    private static ?UsagePolicy $policy = null;
+
     private const PAGE = 100;
 
     /** @var array<string, string> */
     private array $zoneIds = [];
 
-    public function __construct(private readonly Adapter $adapter, private readonly ?string $accountId = null)
+    public function __construct(private readonly Adapter $adapter, private readonly ?string $accountId = null, private readonly ?Backoff $backoff = null)
     {
     }
 
@@ -48,12 +58,17 @@ final class CloudflareProvider implements DnsInterface, DomainsInterface
         return 'Cloudflare';
     }
 
+    public function usagePolicy(): UsagePolicy
+    {
+        return self::$policy ??= UsagePolicy::fromFile(self::POLICY);
+    }
+
     public function capabilities(): Capabilities
     {
         return new Capabilities(domains: null !== $this->accountId, dns: true, recordTypes: Record::TYPES, terms: [
             'https://www.cloudflare.com/terms/',
             'https://developers.cloudflare.com/fundamentals/api/reference/limits/',
-        ]);
+        ], policy: $this->usagePolicy());
     }
 
     public function records(string $zone, ?string $type = null, ?string $name = null): array
@@ -210,9 +225,15 @@ final class CloudflareProvider implements DnsInterface, DomainsInterface
     private function call(\Closure $call, string $what): mixed
     {
         try {
+            $this->backoff?->clear();
+        } catch (UsageLimitReached $e) {
+            throw Redaction::withoutArguments($e);
+        }
+        try {
             return $call();
         } catch (ResponseException $e) {
             $previous = $e->getPrevious();
+            $this->observe($previous instanceof \GuzzleHttp\Exception\RequestException ? $previous->getResponse() : null);
             $status = $previous instanceof \GuzzleHttp\Exception\RequestException ? $previous->getResponse()?->getStatusCode() : null;
             if (null === $status && $previous instanceof \GuzzleHttp\Exception\GuzzleException) {
                 throw self::unreachable($e, $previous, $what);
@@ -225,6 +246,29 @@ final class CloudflareProvider implements DnsInterface, DomainsInterface
         } catch (\GuzzleHttp\Exception\GuzzleException $e) {
             // Guzzle's ConnectException, which the SDK's adapter lets through (it is not a RequestException).
             throw self::unreachable($e, $e, $what);
+        }
+    }
+
+    /**
+     * The wait the provider asks for, kept by its Backoff (the registry's
+     * limiter): a 429 is a UsageLimitReachedException with its Retry-After,
+     * and the next calls wait too. Nothing without a Backoff (a provider
+     * built by hand), nor for an answer that is not an error: the SDK does
+     * not show those headers.
+     */
+    private function observe(?ResponseInterface $response): void
+    {
+        if (null === $this->backoff || null === $response) {
+            return;
+        }
+        $headers = [];
+        foreach ($response->getHeaders() as $name => $values) {
+            $headers[(string) $name] = array_values($values);
+        }
+        try {
+            $this->backoff->observe($response->getStatusCode(), $headers);
+        } catch (UsageLimitReached $e) {
+            throw Redaction::withoutArguments($e);
         }
     }
 

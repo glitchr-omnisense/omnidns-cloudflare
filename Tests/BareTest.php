@@ -8,13 +8,13 @@ use PHPUnit\Framework\TestCase;
 /**
  * omnidns/cloudflare with no framework: every class of the package loaded in a PHP
  * process of its own, with nothing from outside but what it requires -
- * omnisense/omnidns, cloudflare/sdk and what it needs (Guzzle, the PSR interfaces): no framework, no other HTTP client, no application, even
+ * omnisense/omnidns, omnisense/contracts, cloudflare/sdk and what it needs (Guzzle, the PSR interfaces): no framework, no other HTTP client, no application, even
  * in the harness where they are installed beside it.
  */
 final class BareTest extends TestCase
 {
     private const FOREIGN = '~^(?:Symfony\\\\(?!Contracts\\\\HttpClient\\\\|Polyfill\\\\)|(?:Illuminate|Laravel|Doctrine|Twig|League|Nyholm|Omnibridge|Base|App)\\\\)~';
-    private const ALLOWED_FILES = '~/vendor/(?:omnisense/omnidns|cloudflare/sdk|guzzlehttp/[a-z-]+|psr/[a-z-]+|ralouphie/getallheaders|symfony/deprecation-contracts|symfony/http-client-contracts|composer)/|/vendor/autoload\.php$|^/omnidns/(?:core|plugins/cloudflare)/~';
+    private const ALLOWED_FILES = '~/vendor/(?:omnisense/omnidns|omnisense/contracts|cloudflare/sdk|guzzlehttp/[a-z-]+|psr/[a-z-]+|ralouphie/getallheaders|symfony/deprecation-contracts|symfony/http-client-contracts|composer)/|/vendor/autoload\.php$|^/omnidns/(?:core|plugins/cloudflare)/|^/omnisense/contracts/~';
 
     public function testEveryClassLoadsWithTheRequiredPackagesAlone(): void
     {

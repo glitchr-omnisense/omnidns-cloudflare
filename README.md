@@ -40,6 +40,17 @@ Cloudflare's [terms](https://www.cloudflare.com/terms/) and its API's
 [rate limits](https://developers.cloudflare.com/fundamentals/api/reference/limits/) (1,200 calls
 per five minutes per user).
 
+## Usage policy
+
+`policy.json` (omnisense/contracts' schema, read on 2026-11-10, `CloudflareProvider::POLICY`):
+1,200 requests every 5 minutes (per user, across the dashboard and every token) and 200 a second,
+counted here for the whole application; past the first, Cloudflare refuses every call for five
+minutes. Rights unknown; the agreement forbids circumventing usage limits and selling access to the
+Services.
+A key is required. Through omnidns's registry each call is checked against it and counted, a 429
+and its Retry-After hold every next call (`UsageLimitReachedException`); a site may tighten it
+(`policy`), never loosen it. See the core's [usage policies](https://github.com/glitchr-omnisense/omnidns/blob/1.x/docs/policies.md).
+
 ## Verified, and not
 
 - Verified on recorded answers, written from Cloudflare's API v4 reference (not captured), as
