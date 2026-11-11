@@ -8,6 +8,7 @@ use Cloudflare\API\Auth\APIToken;
 use Omnidns\Config;
 use Omnidns\ProviderFactory;
 use Omnidns\ProviderInterface;
+use Omnisense\Contracts\Policy\UsagePolicy;
 
 /**
  * Cloudflare, from its options:
@@ -39,6 +40,6 @@ final class CloudflareFactory extends ProviderFactory
 
     protected function build(Config $c): ProviderInterface
     {
-        return new CloudflareProvider($this->adapter ?? new Guzzle(new APIToken((string) $c->string('token')), $c->string('base_uri')), $c->string('account_id'), $c->backoff());
+        return new CloudflareProvider($this->adapter ?? new Guzzle(new APIToken((string) $c->string('token')), $c->string('base_uri')), $c->string('account_id'), $c->backoff(), $c->guard(UsagePolicy::fromFile(CloudflareProvider::POLICY)));
     }
 }

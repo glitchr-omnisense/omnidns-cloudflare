@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Changed
+- Each page of a listing counted: `records()` fetch the first page as before (the registry's guard
+  counts the operation) and each further page through the provider's guard (`Config::guard()`,
+  from the factory, the constructor's last argument `pages`), checked before it is sent and
+  counted after under the same operation, in the registry's limiter: a limit reached stops the
+  listing before the next page is requested. Needs omnisense/contracts 16c8da1 or later
+  (`Config::guard()`; 1568f2c, what the sites' vendors hold, has it).
+- No limit per zone declared: the limits page (read again 2026-11-11) states none per zone or per
+  record; its 1,200 per 5 minutes is per user (the account's credentials, not a resource a call is
+  about), kept counted for the whole application, the stricter form.
+
 ### Added
 
 - The usage policy as data: `policy.json` (omnisense/contracts' schema, read on 2026-11-10), named in

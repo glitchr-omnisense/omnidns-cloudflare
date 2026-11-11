@@ -20,6 +20,7 @@ use Omnidns\Model\DomainName;
 use Omnidns\Model\Record;
 use Omnisense\Contracts\Policy\Backoff;
 use Omnisense\Contracts\Policy\DeclaresUsagePolicyInterface;
+use Omnisense\Contracts\Policy\PolicyGuard;
 use Omnisense\Contracts\Policy\UsageLimitReached;
 use Omnisense\Contracts\Policy\UsagePolicy;
 use Psr\Http\Message\ResponseInterface;
@@ -44,9 +45,27 @@ final class CloudflareProvider implements DnsInterface, DomainsInterface, Declar
     /** @var array<string, string> */
     private array $zoneIds = [];
 
-    public function __construct(private readonly Adapter $adapter, private readonly ?string $accountId = null, private readonly ?Backoff $backoff = null)
+    /** @param ?PolicyGuard $pages the provider's guard for a listing's further pages (Config::guard()); null: not counted */
+    public function __construct(private readonly Adapter $adapter, private readonly ?string $accountId = null, private readonly ?Backoff $backoff = null, private readonly ?PolicyGuard $pages = null)
     {
     }
+
+    /**
+     * A listing's page: the first as it is (the registry's guard counts the
+     * operation), each further one through the provider's guard
+     * (Config::guard()), checked before it is sent and counted after.
+     *
+     * @template T
+     *
+     * @param \Closure(): T $fetch
+     *
+     * @return T
+     */
+    private function page(int $page, string $operation, \Closure $fetch): mixed
+    {
+        return 1 === $page || null === $this->pages ? $fetch() : $this->pages->call($operation, $fetch);
+    }
+
 
     public function getName(): string
     {
@@ -78,7 +97,7 @@ final class CloudflareProvider implements DnsInterface, DomainsInterface, Declar
         $fqdn = null === $name ? '' : (new Record('A', $name, '0.0.0.0'))->fqdn($zone);
         $records = [];
         for ($page = 1; ; ++$page) {
-            $answer = $this->call(fn () => (new DNS($this->adapter))->listRecords($id, null === $type ? '' : strtoupper($type), $fqdn, '', $page, self::PAGE), "the records of $zone");
+            $answer = $this->page($page, 'records', fn () => $this->call(fn () => (new DNS($this->adapter))->listRecords($id, null === $type ? '' : strtoupper($type), $fqdn, '', $page, self::PAGE), "the records of $zone"));
             foreach (Json::list(self::array($answer), 'result') as $data) {
                 if (null !== $record = self::record($data, $zone)) {
                     $records[] = $record;

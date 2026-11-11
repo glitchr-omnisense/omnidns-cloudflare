@@ -10,6 +10,10 @@ use Omnidns\Exception\NotSupportedException;
 use Omnidns\Exception\ProviderException;
 use Omnidns\Model\Record;
 use Omnidns\Registry;
+use Omnidns\Exception\UsageLimitReachedException;
+use Omnisense\Contracts\Policy\PolicyGuard;
+use Omnisense\Contracts\Policy\RateLimit;
+use Omnisense\Contracts\Policy\UsagePolicy;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -204,6 +208,25 @@ final class CloudflareProviderTest extends TestCase
         } finally {
             ini_set('zend.exception_ignore_args', false !== $ignoreArgs ? $ignoreArgs : '1');
         }
+    }
+
+    public function testEachPageAfterTheFirstIsCountedAndOneOverTheLimitNeverFetched(): void
+    {
+        $this->provider([]);
+        $guard = new PolicyGuard(UsagePolicy::builder('cloudflare')->limit(RateLimit::perDay(0, 'records'))->build(), exception: UsageLimitReachedException::class);
+        $this->adapter->routes = [
+            'GET zones?page=1&per_page=20&match=all&name=example.org' => self::ok([['id' => 'zone-1']]),
+            'GET zones/zone-1/dns_records?page=1&per_page=100&match=all' => self::ok([['id' => 'r1', 'type' => 'A', 'name' => 'example.org', 'content' => '192.0.2.1', 'ttl' => 1]], 2),
+        ];
+        $provider = new CloudflareProvider($this->adapter, pages: $guard);
+
+        try {
+            $provider->records('example.org');
+            self::fail('The second page went out over the limit.');
+        } catch (UsageLimitReachedException $e) {
+            self::assertSame('0/day/application/records', $e->limit?->id());
+        }
+        self::assertCount(2, $this->adapter->calls, 'the zone and the first page; the second never fetched');
     }
 
     /** @param array<string, mixed> $routes */
