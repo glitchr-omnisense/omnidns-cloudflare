@@ -4,6 +4,13 @@ Cloudflare for [omnisense/omnidns](https://github.com/glitchr-omnisense/omnidns)
 host: the records of a zone Cloudflare serves, and the domains Cloudflare Registrar holds for an
 account with their terms.
 
+```sh
+composer require omnisense/omnidns omnidns/cloudflare
+```
+
+It needs a Cloudflare account and an API token (the `token` option); a registration or a renewal is paid for. Its tests run on recorded answers and need
+none; omnidns's README has a first call on a recorded client.
+
 ```php
 use Omnidns\Cloudflare\CloudflareFactory;
 use Omnidns\Model\Record;

@@ -22,8 +22,8 @@
     "require": {
         "php": ">=8.2",
         "cloudflare/sdk": "^1.4|^2.0",
-        "omnisense/contracts": "^1.0@dev",
-        "omnisense/omnidns": "^1.0@dev",
+        "omnisense/contracts": "^1.0",
+        "omnisense/omnidns": "^1.0",
         "psr/http-message": "^1.0|^2.0"
     },
     "require-dev": {
